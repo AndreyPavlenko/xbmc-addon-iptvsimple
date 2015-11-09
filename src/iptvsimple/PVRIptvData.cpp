@@ -33,6 +33,7 @@
 
 #define M3U_START_MARKER        "#EXTM3U"
 #define M3U_INFO_MARKER         "#EXTINF"
+#define TVG_INFO_URL_MARKER     "url-tvg="
 #define TVG_INFO_ID_MARKER      "tvg-id="
 #define TVG_INFO_NAME_MARKER    "tvg-name="
 #define TVG_INFO_LOGO_MARKER    "tvg-logo="
@@ -570,8 +571,15 @@ bool PVRIptvData::LoadPlayList(PVRIptvSource &source, int &iChannelIndex, int &i
       }
       if (strLine.Left((int)strlen(M3U_START_MARKER)) == M3U_START_MARKER) 
       {
+        CStdString  strTvgUrl = ReadMarkerValue(strLine, TVG_INFO_URL_MARKER);
         double fTvgShift = atof(ReadMarkerValue(strLine, TVG_INFO_SHIFT_MARKER));
         iEPGTimeShift = (int) (fTvgShift * 3600.0);
+
+        if (source.strTvgPath.IsEmpty() && !strTvgUrl.IsEmpty()) {
+          source.bCacheEPG = true;
+          source.strTvgPath = strTvgUrl;
+        }
+
         continue;
       }
       else
