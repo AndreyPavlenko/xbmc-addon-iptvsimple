@@ -253,10 +253,6 @@ void PVRIptvData::LoadSettings() {
     {
       source.strLogoPath = valueBuffer;
     }
-    if ((i == 0) && (source.strLogoPath == ""))
-    {
-      source.strLogoPath = GetClientFilePath("icons/");
-    }
 
     m_sources.push_back(source);
   }
@@ -297,6 +293,7 @@ bool PVRIptvData::LoadEPG(time_t iStart, time_t iEnd, PVRIptvSource &source, int
   int iReaded = 0;
   CStdString strCachedName;
   strCachedName.Fmt(TVG_FILE_NAME_FORMAT, source.iId);
+  XBMC->Log(LOG_NOTICE, "Loading EPG: %s", source.strTvgPath.c_str());
 
   int iCount = 0;
   while(iCount < 3) // max 3 tries
@@ -365,6 +362,8 @@ bool PVRIptvData::LoadEPG(time_t iStart, time_t iEnd, PVRIptvSource &source, int
   catch(parse_error &p)
   {
     XBMC->Log(LOG_ERROR, "Unable parse EPG XML: %s", p.what());
+    // Probably the cached file is corrupted - deleting it
+    XBMC->DeleteFile(GetUserFilePath(strCachedName).c_str());
     return false;
   }
 
@@ -1155,10 +1154,18 @@ void PVRIptvData::ApplyChannelsLogos()
       fileName.Fmt(source.strLogoFileNameFormat, channel->strTvgLogo.c_str());
       channel->strLogoPath = PathCombine(source.strLogoPath, fileName.c_str());
     }
-    else
+    else if (!defaultSource.strLogoPath.IsEmpty())
     {
       fileName.Fmt(defaultSource.strLogoFileNameFormat, channel->strTvgLogo.c_str());
       channel->strLogoPath = PathCombine(defaultSource.strLogoPath, fileName.c_str());
+    }
+    else if (channel->strTvgLogo.find("://") != -1)
+    {
+      channel->strLogoPath = channel->strTvgLogo.c_str();
+    }
+    else
+    {
+      channel->strLogoPath = "";
     }
   }
 }
